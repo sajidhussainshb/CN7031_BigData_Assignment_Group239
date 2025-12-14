@@ -1,0 +1,19 @@
+{
+  "execution_times": {
+    "rdd_api_seconds": 16.61341667175293,
+    "dataframe_api_seconds": 7.192148447036743,
+    "performance_improvement_percent": 56.70879392758962
+  },
+  "results_validation": {
+    "results_match": false
+  },
+  "dataset_info": {
+    "total_rows": 12500,
+    "review_column": "review",
+    "columns_used": [
+      "review_length",
+      "word_count",
+      "has_positive"
+    ]
+  }
+}

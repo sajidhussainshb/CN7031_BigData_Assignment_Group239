@@ -1,0 +1,41 @@
+TASK 10: EXECUTION PLAN COMPARISON
+==================================================
+
+DATAFRAME EXECUTION PLAN:
+== Parsed Logical Plan ==
+'Sort ['has_positive ASC NULLS FIRST], true
++- Aggregate [has_positive#23], [has_positive#23, avg(review_length#21) AS avg_length#89, count(1) AS review_count#90L, avg(word_count#22) AS avg_words#91]
+   +- Filter (review_length#21 > 50)
+      +- Project [review#0, rating#1L, review_clean#2, review_length#21, word_count#22, CASE WHEN RLIKE(review#0, \b(great|good|excellent|amazing|best)\b) THEN 1 ELSE 0 END AS has_positive#23]
+         +- Project [review#0, rating#1L, review_clean#2, review_length#21, size(split(review#0,  , -1), false) AS word_count#22]
+            +- Project [review#0, rating#1L, review_clean#2, length(review#0) AS review_length#21]
+               +- Relation [review#0,rating#1L,review_clean#2] parquet
+
+== Analyzed Logical Plan ==
+has_positive: int, avg_length: double, review_count: bigint, avg_words: double
+Sort [has_positive#23 ASC NULLS FIRST], true
++- Aggregate [has_positive#23], [has_positive#23, avg(review_length#21) AS avg_length#89, count(1) AS review_count#90L, avg(word_count#22) AS avg_words#91]
+   +- Filter (review_length#21 > 50)
+      +- Project [review#0, rating#1L, review_clean#2, review_length#21, word_count#22, CASE WHEN RLIKE(review#0, \b(great|good|excellent|amazing|best)\b) THEN 1 ELSE 0 END AS has_positive#23]
+         +- Project [review#0, rating#1L, review_clean#2, review_length#21, size(split(review#0,  , -1), false) AS word_count#22]
+            +- Project [review#0, rating#1L, review_clean#2, length(review#0) AS review_length#21]
+               +- Relation [review#0,rating#1L,review_clean#2] parquet
+
+== Optimized Logical Plan ==
+Sort [has_positive#23 ASC NULLS FIRST], true
++- Aggregate [has_positive#23], [has_positive#23, avg(review_length#21) AS avg_length#89, count(1) AS review_count#90L, avg(word_count#22) AS avg_words#91]
+   +- Project [length(review#0) AS review_length#21, size(split(review#0,  , -1), false) AS word_count#22, CASE WHEN RLIKE(review#0, \b(great|good|excellent|amazing|best)\b) THEN 1 ELSE 0 END AS has_positive#23]
+      +- Filter (isnotnull(review#0) AND (length(review#0) > 50))
+         +- Relation [review#0,rating#1L,review_clean#2] parquet
+
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- Sort [has_positive#23 ASC NULLS FIRST], true, 0
+   +- Exchange rangepartitioning(has_positive#23 ASC NULLS FIRST, 4), ENSURE_REQUIREMENTS, [plan_id=377]
+      +- HashAggregate(keys=[has_positive#23], functions=[avg(review_length#21), count(1), avg(word_count#22)], output=[has_positive#23, avg_length#89, review_count#90L, avg_words#91])
+         +- Exchange hashpartitioning(has_positive#23, 4), ENSURE_REQUIREMENTS, [plan_id=374]
+            +- HashAggregate(keys=[has_positive#23], functions=[partial_avg(review_length#21), partial_count(1), partial_avg(word_count#22)], output=[has_positive#23, sum#106, count#107L, count#108L, sum#109, count#110L])
+               +- Project [length(review#0) AS review_length#21, size(split(review#0,  , -1), false) AS word_count#22, CASE WHEN RLIKE(review#0, \b(great|good|excellent|amazing|best)\b) THEN 1 ELSE 0 END AS has_positive#23]
+                  +- Filter (isnotnull(review#0) AND (length(review#0) > 50))
+                     +- FileScan parquet [review#0] Batched: true, DataFilters: [isnotnull(review#0), (length(review#0) > 50)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[file:/home/sajid/spark_bigdata_assignment/spark_practice/clean_reviews..., PartitionFilters: [], PushedFilters: [IsNotNull(review)], ReadSchema: struct<review:string>
+
